@@ -30,6 +30,8 @@ add_library(${LIB_NAME}
         ${LIB_MAIN_SRC}
         ${LIB_MAIN_INC})
 
+add_library(XEVD::${LIB_NAME} ALIAS ${LIB_NAME})
+
 if("${ARM}" STREQUAL "TRUE")
     target_sources(${LIB_NAME} PRIVATE
             ${LIB_NEON_SRC}

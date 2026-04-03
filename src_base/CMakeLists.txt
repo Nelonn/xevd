@@ -18,6 +18,8 @@ include_directories("${CMAKE_BINARY_DIR}")
 
 add_library(${LIB_NAME_BASE} ${LIB_API_SRC} ${XEVD_INC} ${LIB_BASE_SRC} ${LIB_BASE_INC})
 
+add_library(XEVD::${LIB_NAME_BASE} ALIAS ${LIB_NAME_BASE})
+
 if("${ARM}" STREQUAL "TRUE")
     target_sources(${LIB_NAME_BASE} PRIVATE ${LIB_NEON_SRC} ${LIB_NEON_INC})
 else()
