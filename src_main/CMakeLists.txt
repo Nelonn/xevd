@@ -22,7 +22,7 @@ file (GLOB LIB_MAIN_NEON_INC "./neon/xevdm_*.h" )
 include(GenerateExportHeader)
 include_directories("${CMAKE_CURRENT_BINARY_DIR}")
 
-add_library(${LIB_NAME}
+add_library(${LIB_NAME} STATIC
         ${LIB_API_MAIN_SRC}
         ${XEVD_INC}
         ${LIB_BASE_SRC}
@@ -61,25 +61,6 @@ if(NOT MSVC AND CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64")
             -fno-tree-vectorize
     )
 endif ()
-
-# @todo Consider using WINDOWS_EXPORT_ALL_SYMBOLS instead of generate_export_header
-# @see https://cmake.org/cmake/help/latest/prop_tgt/WINDOWS_EXPORT_ALL_SYMBOLS.html#prop_tgt:WINDOWS_EXPORT_ALL_SYMBOLS
-#if(MSVC)
-    # @see https://blog.kitware.com/create-dlls-on-windows-without-declspec-using-new-cmake-export-all-feature/
-    # @see https://cmake.org/cmake/help/v3.3/module/GenerateExportHeader.html
-    #
-    #set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
-    #set(BUILD_SHARED_LIBS TRUE)
-#endif()
-
-# Generate export macros for libraries
-# @see https://gernotklingler.com/blog/creating-using-shared-libraries-different-compilers-different-operating-systems/
-generate_export_header(${LIB_NAME}
-                       BASE_NAME XEVD
-                       EXPORT_FILE_NAME ${CMAKE_CURRENT_BINARY_DIR}/xevd_exports.h)
-
-# This will cause the export macros to expand to nothing when building the static library.
-set_target_properties(${LIB_NAME} PROPERTIES  COMPILE_FLAGS -DLIBSHARED_AND_STATIC_STATIC_DEFINE)
 
 source_group("base\\header" FILES ${LIB_BASE_INC} ${XEVD_INC})
 source_group("base\\source" FILES ${LIB_BASE_SRC} ${LIB_API_SRC})
@@ -160,10 +141,6 @@ if (XEVD_INSTALL)
             RUNTIME COMPONENT Libraries DESTINATION ${CMAKE_INSTALL_BINDIR}
             PUBLIC_HEADER COMPONENT Development DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
             INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-    )
-
-    install( FILES
-        ${PROJECT_BINARY_DIR}/xevd_exports.h COMPONENT Development DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
     )
 
     configure_file(

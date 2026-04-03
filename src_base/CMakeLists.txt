@@ -14,7 +14,7 @@ file (GLOB LIB_NEON_INC "neon/xevd_*.h" )
 include(GenerateExportHeader)
 include_directories("${CMAKE_CURRENT_BINARY_DIR}")
 
-add_library(${LIB_NAME_BASE} ${LIB_API_SRC} ${XEVD_INC} ${LIB_BASE_SRC} ${LIB_BASE_INC})
+add_library(${LIB_NAME_BASE} STATIC ${LIB_API_SRC} ${XEVD_INC} ${LIB_BASE_SRC} ${LIB_BASE_INC})
 
 add_library(XEVD::${LIB_NAME_BASE} ALIAS ${LIB_NAME_BASE})
 
@@ -48,8 +48,7 @@ endif ()
 
 # Generate export macros for libraries
 generate_export_header(${LIB_NAME_BASE}
-                       BASE_NAME XEVD
-                       EXPORT_FILE_NAME ${CMAKE_CURRENT_BINARY_DIR}/xevd_exports.h)
+                       BASE_NAME XEVD)
 
 # This will cause the export macros to expand to nothing when building the static library.
 set_target_properties(${LIB_NAME_BASE} PROPERTIES COMPILE_FLAGS -DLIBSHARED_AND_STATIC_STATIC_DEFINE)
@@ -127,10 +126,6 @@ if (XEVD_INSTALL)
             RUNTIME COMPONENT Libraries DESTINATION ${CMAKE_INSTALL_BINDIR}
             PUBLIC_HEADER COMPONENT Development DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
             INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-    )
-
-    install( FILES
-        ${PROJECT_BINARY_DIR}/xevd_exports.h COMPONENT Development DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
     )
 
     configure_file(

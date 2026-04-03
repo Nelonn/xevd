@@ -72,11 +72,6 @@ cmake_policy(SET CMP0048 NEW)
 set(CMAKE_C_STANDARD 99)
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
-option(XEVD_APP_STATIC_BUILD "xevd_app will be statically linked against static xevd library" ON)
-if(XEVD_APP_STATIC_BUILD)
-    add_definitions(-DXEVD_STATIC_DEFINE)
-endif(XEVD_APP_STATIC_BUILD)
-
 if(XEVD_PROFILE STREQUAL "BASE")
     add_subdirectory(src_base)
 endif()
