@@ -135,7 +135,7 @@ if (XEVD_INSTALL)
 
     # Install library and public headers
     install(TARGETS ${LIB_NAME}
-            EXPORT XEVDTTargets
+            EXPORT XEVDTargets
             ARCHIVE COMPONENT Development DESTINATION ${CMAKE_INSTALL_LIBDIR}
             LIBRARY COMPONENT Libraries DESTINATION ${CMAKE_INSTALL_LIBDIR}
             RUNTIME COMPONENT Libraries DESTINATION ${CMAKE_INSTALL_BINDIR}
