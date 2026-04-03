@@ -121,8 +121,8 @@ if (XEVD_INSTALL)
     )
 
     # Install the export target
-    install(EXPORT XEVDTTargets
-            FILE XEVDTTargets.cmake
+    install(EXPORT XEVDTargets
+            FILE XEVDTargets.cmake
             NAMESPACE XEVD::
             DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/XEVD
             COMPONENT Development
