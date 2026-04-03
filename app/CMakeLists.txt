@@ -1,5 +1,5 @@
 include_directories (${PROJECT_SOURCE_DIR}/app)
-include_directories (${CMAKE_BINARY_DIR})
+include_directories (${CMAKE_CURRENT_BINARY_DIR})
 
 set( EXE_NAME xevd_app )
 set( EXE_NAME_BASE xevdb_app)
@@ -18,7 +18,7 @@ if(("${SET_PROF}" STREQUAL "MAIN"))
   endif()
 
   set_property(TARGET ${EXE_NAME} PROPERTY FOLDER "app")
-  set_target_properties(${EXE_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+  set_target_properties(${EXE_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin)
 
   if( MSVC )
     target_compile_definitions( ${EXE_NAME} PUBLIC _CRT_SECURE_NO_WARNINGS ANY )
@@ -46,7 +46,7 @@ if(("${SET_PROF}" STREQUAL "BASE"))
   endif()
 
   set_property(TARGET ${EXE_NAME_BASE} PROPERTY FOLDER "app")
-  set_target_properties(${EXE_NAME_BASE} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+  set_target_properties(${EXE_NAME_BASE} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin)
   if( MSVC )
     target_compile_definitions( ${EXE_NAME_BASE} PUBLIC _CRT_SECURE_NO_WARNINGS ANY )
   elseif( UNIX OR MINGW )

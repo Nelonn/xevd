@@ -1,7 +1,5 @@
 ﻿set( LIB_NAME_BASE xevdb )
 
-set( LIB_SOVERSION ${VERSION_MAJOR})
-
 file (GLOB XEVD_INC "../inc/*.h")
 file (GLOB LIB_API_SRC "xevd.c")
 file (GLOB LIB_BASE_SRC "xevd_*.c")
@@ -14,7 +12,7 @@ file (GLOB LIB_NEON_SRC "neon/xevd_*.c")
 file (GLOB LIB_NEON_INC "neon/xevd_*.h" )
 
 include(GenerateExportHeader)
-include_directories("${CMAKE_BINARY_DIR}")
+include_directories("${CMAKE_CURRENT_BINARY_DIR}")
 
 add_library(${LIB_NAME_BASE} ${LIB_API_SRC} ${XEVD_INC} ${LIB_BASE_SRC} ${LIB_BASE_INC})
 
@@ -51,7 +49,7 @@ endif ()
 # Generate export macros for libraries
 generate_export_header(${LIB_NAME_BASE}
                        BASE_NAME XEVD
-                       EXPORT_FILE_NAME ${CMAKE_BINARY_DIR}/xevd_exports.h)
+                       EXPORT_FILE_NAME ${CMAKE_CURRENT_BINARY_DIR}/xevd_exports.h)
 
 # This will cause the export macros to expand to nothing when building the static library.
 set_target_properties(${LIB_NAME_BASE} PROPERTIES COMPILE_FLAGS -DLIBSHARED_AND_STATIC_STATIC_DEFINE)
@@ -79,7 +77,7 @@ endif()
 
 
 set_target_properties(${LIB_NAME_BASE} PROPERTIES FOLDER lib
-                                                  ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+                                                  ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib)
 
 
 set( SSE ${BASE_INC_FILES} ${LIB_SSE_SRC})
@@ -117,35 +115,39 @@ set_target_properties(${LIB_NAME_BASE} PROPERTIES PUBLIC_HEADER "${XEVD_PUBLIC_H
 
 set(XEVD_PRIVATE_HEADERS "${LIB_BASE_INC}" "${LIB_SSE_INC}" "${LIB_AVX_INC}")
 
-include(GNUInstallDirs)
+if (XEVD_INSTALL)
 
-# Install library and public headers
-install(TARGETS ${LIB_NAME_BASE}
-        EXPORT XEVDTTargets
-        ARCHIVE COMPONENT Development DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        LIBRARY COMPONENT Libraries DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        RUNTIME COMPONENT Libraries DESTINATION ${CMAKE_INSTALL_BINDIR}
-        PUBLIC_HEADER COMPONENT Development DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-        INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-)
+    include(GNUInstallDirs)
 
-install( FILES
-    ${PROJECT_BINARY_DIR}/xevd_exports.h COMPONENT Development DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-)
+    # Install library and public headers
+    install(TARGETS ${LIB_NAME_BASE}
+            EXPORT XEVDTTargets
+            ARCHIVE COMPONENT Development DESTINATION ${CMAKE_INSTALL_LIBDIR}
+            LIBRARY COMPONENT Libraries DESTINATION ${CMAKE_INSTALL_LIBDIR}
+            RUNTIME COMPONENT Libraries DESTINATION ${CMAKE_INSTALL_BINDIR}
+            PUBLIC_HEADER COMPONENT Development DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+            INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    )
 
-configure_file(
-    "${CMAKE_SOURCE_DIR}/pkgconfig/${LIB_NAME_BASE}.pc.in"
-    "${CMAKE_BINARY_DIR}/${LIB_NAME_BASE}.pc"
-    IMMEDIATE @ONLY)
+    install( FILES
+        ${PROJECT_BINARY_DIR}/xevd_exports.h COMPONENT Development DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    )
 
-install( FILES
-    "${CMAKE_BINARY_DIR}/${LIB_NAME_BASE}.pc" COMPONENT Development DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
-)
+    configure_file(
+        "${CMAKE_CURRENT_SOURCE_DIR}/pkgconfig/${LIB_NAME_BASE}.pc.in"
+        "${CMAKE_CURRENT_BINARY_DIR}/${LIB_NAME_BASE}.pc"
+        IMMEDIATE @ONLY)
 
-# Install the export target
-install(EXPORT XEVDTTargets
-        FILE XEVDTTargets.cmake
-        NAMESPACE XEVD::
-        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/XEVD
-        COMPONENT Development
-)
+    install( FILES
+        "${CMAKE_CURRENT_BINARY_DIR}/${LIB_NAME_BASE}.pc" COMPONENT Development DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
+    )
+
+    # Install the export target
+    install(EXPORT XEVDTTargets
+            FILE XEVDTTargets.cmake
+            NAMESPACE XEVD::
+            DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/XEVD
+            COMPONENT Development
+    )
+
+endif ()
