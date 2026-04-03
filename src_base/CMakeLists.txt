@@ -36,23 +36,6 @@ if(NOT MSVC AND CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64")
     )
 endif ()
 
-# @todo Consider using WINDOWS_EXPORT_ALL_SYMBOLS instead of generate_export_header
-# @see https://cmake.org/cmake/help/latest/prop_tgt/WINDOWS_EXPORT_ALL_SYMBOLS.html#prop_tgt:WINDOWS_EXPORT_ALL_SYMBOLS
-#if(MSVC)
-    # @see https://blog.kitware.com/create-dlls-on-windows-without-declspec-using-new-cmake-export-all-feature/
-    # @see https://cmake.org/cmake/help/v3.3/module/GenerateExportHeader.html
-    #
-    #set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
-    #set(BUILD_SHARED_LIBS TRUE)
-#endif()
-
-# Generate export macros for libraries
-generate_export_header(${LIB_NAME_BASE}
-                       BASE_NAME XEVD)
-
-# This will cause the export macros to expand to nothing when building the static library.
-set_target_properties(${LIB_NAME_BASE} PROPERTIES COMPILE_FLAGS -DLIBSHARED_AND_STATIC_STATIC_DEFINE)
-
 source_group("base\\header" FILES ${LIB_BASE_INC} ${XEVD_INC})
 source_group("base\\source" FILES ${LIB_BASE_SRC} ${LIB_API_SRC})
 source_group("base\\sse\\header" FILES ${LIB_SSE_INC})
