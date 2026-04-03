@@ -43,9 +43,9 @@ int fp_trace_counter = 0;
 #endif
 
 #if X86_SSE
-#if (defined(_WIN64) || defined(_WIN32)) && !defined(__GNUC__)
-#include <intrin.h >
-#elif defined( __GNUC__)
+#if (defined(_WIN64) || defined(_WIN32)) && !defined(__GNUC__) && !defined(__clang__)
+#include <intrin.h>
+#elif defined( __GNUC__) || defined(__clang__)
 #ifndef _XCR_XFEATURE_ENABLED_MASK
 #define _XCR_XFEATURE_ENABLED_MASK 0
 #endif

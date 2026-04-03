@@ -31,7 +31,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "xevd_tp.h"
-#if defined(WIN32) || defined(WIN64)
+#if defined(_WIN32) || defined(_WIN64)
 #include <windows.h>
 #include <process.h>
 #else

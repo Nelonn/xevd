@@ -1,10 +1,5 @@
 ﻿set( LIB_NAME xevd )
 
-# For shared libraries VERSION and SOVERSION can be used to specify the build version and API version respectively
-# see https://cmake.org/cmake/help/latest/prop_tgt/SOVERSION.html
-#
-set( LIB_SOVERSION ${VERSION_MAJOR})
-
 file (GLOB XEVD_INC "../inc/*.h")
 file (GLOB LIB_BASE_SRC "../src_base/xevd_*.c")
 file (GLOB LIB_BASE_INC "../src_base/xevd_*.h" )
@@ -27,19 +22,43 @@ file (GLOB LIB_MAIN_NEON_INC "./neon/xevdm_*.h" )
 include(GenerateExportHeader)
 include_directories("${CMAKE_BINARY_DIR}")
 
+add_library(${LIB_NAME}
+        ${LIB_API_MAIN_SRC}
+        ${XEVD_INC}
+        ${LIB_BASE_SRC}
+        ${LIB_BASE_INC}
+        ${LIB_MAIN_SRC}
+        ${LIB_MAIN_INC})
+
 if("${ARM}" STREQUAL "TRUE")
-    add_library( ${LIB_NAME} STATIC ${LIB_API_MAIN_SRC} ${XEVD_INC} ${LIB_BASE_SRC} ${LIB_BASE_INC} ${LIB_MAIN_SRC} ${LIB_MAIN_INC} 
-                                    ${LIB_NEON_SRC} ${LIB_NEON_INC} ${LIB_MAIN_NEON_SRC} ${LIB_MAIN_NEON_INC} )
-    add_library( ${LIB_NAME}_dynamic SHARED ${LIB_API_MAIN_SRC} ${XEVD_INC} ${LIB_BASE_SRC} ${LIB_BASE_INC} ${LIB_MAIN_SRC} ${LIB_MAIN_INC} 
-                                    ${LIB_NEON_SRC} ${LIB_NEON_INC} ${LIB_MAIN_NEON_SRC} ${LIB_MAIN_NEON_INC} )
+    target_sources(${LIB_NAME} PRIVATE
+            ${LIB_NEON_SRC}
+            ${LIB_NEON_INC}
+            ${LIB_MAIN_NEON_SRC}
+            ${LIB_MAIN_NEON_INC})
 else()
-    add_library( ${LIB_NAME} STATIC ${LIB_API_MAIN_SRC} ${XEVD_INC} ${LIB_BASE_SRC} ${LIB_BASE_INC} ${LIB_MAIN_SRC} ${LIB_MAIN_INC}
-                                    ${LIB_SSE_SRC} ${LIB_SSE_INC} ${LIB_MAIN_SSE_SRC} ${LIB_MAIN_SSE_INC} ${LIB_AVX_SRC} ${LIB_AVX_INC} ${LIB_MAIN_AVX_SRC} ${LIB_MAIN_AVX_INC} )
-    add_library( ${LIB_NAME}_dynamic SHARED ${LIB_API_MAIN_SRC} ${XEVD_INC} ${LIB_BASE_SRC} ${LIB_BASE_INC} ${LIB_MAIN_SRC} ${LIB_MAIN_INC}
-                                            ${LIB_SSE_SRC} ${LIB_SSE_INC} ${LIB_MAIN_SSE_SRC} ${LIB_MAIN_SSE_INC} ${LIB_AVX_SRC} ${LIB_AVX_INC} ${LIB_MAIN_AVX_SRC} ${LIB_MAIN_AVX_INC} )
+    target_sources(${LIB_NAME} PRIVATE
+            ${LIB_SSE_SRC}
+            ${LIB_SSE_INC}
+            ${LIB_MAIN_SSE_SRC}
+            ${LIB_MAIN_SSE_INC}
+            ${LIB_AVX_SRC}
+            ${LIB_AVX_INC}
+            ${LIB_MAIN_AVX_SRC}
+            ${LIB_MAIN_AVX_INC})
 endif()
 
-set_target_properties(${LIB_NAME}_dynamic PROPERTIES VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR} SOVERSION ${LIB_SOVERSION})
+if(NOT MSVC AND CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64")
+    target_compile_options(${LIB_NAME} PRIVATE
+            -mssse3
+            -msse4.1
+            -msse4.2
+            -mavx
+            -mavx2
+            -mavx512f
+            -fno-tree-vectorize
+    )
+endif ()
 
 # @todo Consider using WINDOWS_EXPORT_ALL_SYMBOLS instead of generate_export_header
 # @see https://cmake.org/cmake/help/latest/prop_tgt/WINDOWS_EXPORT_ALL_SYMBOLS.html#prop_tgt:WINDOWS_EXPORT_ALL_SYMBOLS
@@ -77,20 +96,26 @@ source_group("main\\avx\\source" FILES ${LIB_MAIN_AVX_SRC})
 source_group("main\\neon\\header" FILES ${LIB_MAIN_NEON_INC})
 source_group("main\\neon\\source" FILES ${LIB_MAIN_NEON_SRC})
 
+target_include_directories(${LIB_NAME} PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../src_base>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../inc>
+        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+)
+
 if("${ARM}" STREQUAL "TRUE")
-    include_directories( ${LIB_NAME} PUBLIC . .. ../inc ./neon ../src_base ../src_base/neon)
+    include_directories( ${LIB_NAME} PUBLIC ./neon ../src_base/neon)
 else()
-    include_directories( ${LIB_NAME} PUBLIC . .. ../inc ./sse ./avx ../src_base ../src_base/sse ../src_base/avx)
+    include_directories( ${LIB_NAME} PUBLIC ./sse ./avx ../src_base/sse ../src_base/avx)
 endif()
 
 set( SSE ${BASE_INC_FILES} ${LIB_SSE_SRC} ${LIB_MAIN_SSE_SRC})
 set( AVX ${LIB_AVX_SRC} ${LIB_MAIN_AVX_SRC})
 
-set_target_properties(${LIB_NAME}_dynamic PROPERTIES OUTPUT_NAME ${LIB_NAME})
+set_target_properties(${LIB_NAME} PROPERTIES OUTPUT_NAME ${LIB_NAME})
 
 if( MSVC )
     target_compile_definitions( ${LIB_NAME} PUBLIC ANY _CRT_SECURE_NO_WARNINGS )
-    target_compile_definitions( ${LIB_NAME}_dynamic PUBLIC ANY _CRT_SECURE_NO_WARNINGS )
 
     # Since both the import library associated with DLL and the static library have the same names
     # they must be build in different locations to avoid overwriting.
@@ -98,8 +123,6 @@ if( MSVC )
     set_target_properties(${LIB_NAME} PROPERTIES FOLDER lib
                             ARCHIVE_OUTPUT_DIRECTORY  ${CMAKE_CURRENT_BINARY_DIR}/static/lib)
 
-    set_target_properties(${LIB_NAME}_dynamic PROPERTIES FOLDER lib
-                            ARCHIVE_OUTPUT_DIRECTORY  ${CMAKE_CURRENT_BINARY_DIR}/import/lib)
 elseif( UNIX OR MINGW )
     if("${ARM}" STREQUAL "FALSE")
         set_property( SOURCE ${SSE} APPEND PROPERTY COMPILE_FLAGS "-msse4.1" )
@@ -120,38 +143,23 @@ endif()
 # List the headers we want to declare as public for installation.
 set(XEVD_PUBLIC_HEADERS "${XEVD_INC}")
 set_target_properties(${LIB_NAME} PROPERTIES PUBLIC_HEADER "${XEVD_PUBLIC_HEADERS}")
-set_target_properties(${LIB_NAME}_dynamic PROPERTIES PUBLIC_HEADER "${XEVD_PUBLIC_HEADERS}")
 
 set(XEVD_PRIVATE_HEADERS "${LIB_BASE_INC}" "${LIB_SSE_INC}" "${LIB_AVX_INC}")
 
 include(GNUInstallDirs)
 
-# Install static library and public headers
-#
-# Static library (libxevdb.a or xevdb.lib) will be installed to <prefix>/lib/xevdb
-# Public headers will be installed to <prefix>/include/xevdb
-#
+# Install library and public headers
 install(TARGETS ${LIB_NAME}
-        ARCHIVE COMPONENT Development DESTINATION ${CMAKE_INSTALL_LIBDIR}/${LIB_NAME}
-        PUBLIC_HEADER COMPONENT Development DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${LIB_NAME}
-)
-
-# Install shared library
-#
-# On non-DLL platforms shared library (libxevdb.so) will be installed to <prefix>/lib/xevdb.
-# On DLL platforms the shred DLL (xevdb.dll) will be installed to <prefix>/bin and its import library will be installed to <prefix>/lib/xevdb/import
-#
-install(TARGETS ${LIB_NAME}_dynamic
-        RUNTIME COMPONENT Libraries DESTINATION ${CMAKE_INSTALL_BINDIR}
-        LIBRARY
-            COMPONENT Libraries DESTINATION ${CMAKE_INSTALL_LIBDIR}
-            NAMELINK_COMPONENT Development DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        EXPORT XEVDTTargets
         ARCHIVE COMPONENT Development DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        PUBLIC_HEADER COMPONENT Development DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${LIB_NAME}
+        LIBRARY COMPONENT Libraries DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        RUNTIME COMPONENT Libraries DESTINATION ${CMAKE_INSTALL_BINDIR}
+        PUBLIC_HEADER COMPONENT Development DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+        INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
 
 install( FILES
-    ${PROJECT_BINARY_DIR}/xevd_exports.h COMPONENT Development DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${LIB_NAME}
+    ${PROJECT_BINARY_DIR}/xevd_exports.h COMPONENT Development DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
 
 configure_file(
@@ -161,4 +169,12 @@ configure_file(
 
 install( FILES
     "${CMAKE_BINARY_DIR}/${LIB_NAME}.pc" COMPONENT Development DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
+)
+
+# Install the export target
+install(EXPORT XEVDTTargets
+        FILE XEVDTTargets.cmake
+        NAMESPACE XEVD::
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/XEVD
+        COMPONENT Development
 )

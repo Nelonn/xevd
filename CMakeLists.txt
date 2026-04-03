@@ -1,84 +1,19 @@
-cmake_minimum_required (VERSION 3.5)
+cmake_minimum_required (VERSION 3.20)
 
-########################################
-# Project versioning
-########################################
+project (XEVD VERSION 0.5.0 LANGUAGES C)
 
-function(get_versions versionstring VERSION_MAJOR VERSION_MINOR VERSION_PATCH)
-    string(REGEX REPLACE "^([vV])([0-9]*)([.][0-9]*[.][0-9]*-?.*)$" "\\2" numbers ${versionstring} )
-    set(VERSION_MAJOR ${numbers} PARENT_SCOPE)
-    string(REGEX REPLACE "^([vV][0-9]*[.])([0-9]*)([.][0-9]*-?.*)$" "\\2" numbers ${versionstring} )
-    set(VERSION_MINOR ${numbers} PARENT_SCOPE)
-    string(REGEX REPLACE "^([vV][0-9]*[.][0-9]*[.])([0-9]*)(-?.*)$" "\\2" numbers ${versionstring} )
-    set(VERSION_PATCH ${numbers} PARENT_SCOPE)
-endfunction()
+option(XEVD_BUILD_APP "Build xevd app" OFF)
 
-execute_process(
-    COMMAND git describe --match "v[0-9]*.[0-9]*.[0-9]*" --abbrev=0 --tags
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-    RESULT_VARIABLE RESULT
-    OUTPUT_VARIABLE OUTPUT)
+set(XEVD_PROFILE "MAIN" CACHE STRING "xevd profile (BASE/MAIN)")
+set_property(CACHE XEVD_PROFILE PROPERTY STRINGS BASE MAIN)
 
-if(NOT RESULT EQUAL 0)
-
-  find_program(GIT_COMMAND "git")
-  if(GIT_COMMAND)
-    message(WARNING "There is no valid git repository in your working directory \"${CMAKE_SOURCE_DIR}\" .")
-  else()
-    message(WARNING "You have no git tool installed.")
-  endif()
-
-  if(NOT EXISTS "${CMAKE_SOURCE_DIR}/version.txt")
-    message(FATAL_ERROR
-      "version.txt file doesn't exist!\n"
-      "Since your working directory doesn't contain a git repository you must provide \"${CMAKE_SOURCE_DIR}/version.txt\" file containing a valid version string.\n"
-      "The version string provided to version.txt must match the following format:\n\tv[VERSION_MAJOR].[VERSION_MINOR].[VERSION_PATCH]\n"
-      "To get the information on version of the downloaded library please follow the link below:\n\t https://github.com/mpeg5/xeve"
-    )
-  endif()
-
-  message("Version string has been taken from version.txt file.")
-  file(STRINGS "version.txt" VERSION_STRING)
-
-else()
-  message("Version string has been taken from git tag.")
-  set(VERSION_STRING ${OUTPUT})
-  string(REGEX REPLACE "\n$" "" VERSION_STRING "${VERSION_STRING}")
+if(NOT DEFINED XEVD_PROFILE)
+    set(XEVD_PROFILE "MAIN")
+elseif (NOT (XEVD_PROFILE STREQUAL "MAIN") AND NOT (XEVD_PROFILE STREQUAL "BASE"))
+    message(FATAL_ERROR "XEVD_PROFILE should be BASE or MAIN [Input error: ${XEVD_PROFILE}]")
 endif()
 
-if(NOT ${VERSION_STRING} MATCHES "^[vV][0-9]*[.][0-9]*[.][0-9]*$")
-  message(FATAL_ERROR "Version string taken from version.txt doesn't match required format v[VERSION_MAJOR].[VERSION_MINOR].[VERSION_PATCH]")
-endif()
-
-get_versions(${VERSION_STRING} VERSION_MAJOR VERSION_MINOR VERSION_PATCH)
-if(VERSION_MAJOR STREQUAL ${VERSION_STRING})
-  message(FATAL_ERROR "Version string parsing error")
-endif()
-message("XEVD VERSION=${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}")
-
-project (XEVD VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH} LANGUAGES C)
-
-########################################
-# Input arguments.
-########################################
-
-# To build in debug provide in command line: -DCMAKE_BUILD_TYPE=Debug
-if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE "Release") # Default build type
-endif()
-message("CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
-
-# To set profile from command line: -DSET_PROF=BASE
-if(NOT SET_PROF)
-  set(SET_PROF "MAIN")
-endif()
-
-if(("${SET_PROF}" STREQUAL "MAIN") OR ("${SET_PROF}" STREQUAL "BASE"))
-  message("SET_PROF=${SET_PROF}")
-else()
-  message("SET_PORF should be BASE or MAIN [Input error: ${SET_PROF}]")
-  return()
-endif()
+message(STATUS "XEVD_PROFILE = ${XEVD_PROFILE}")
 
 # To build for arm provide in command line: -DARM=TRUE
 if(NOT ARM)
@@ -90,7 +25,6 @@ else()
     set(CMAKE_EXE_LINKER_FLAGS "-static")
   endif()
 endif()
-message("ARM=${ARM}")
 
 ########################################
 # Compilation flags
@@ -104,7 +38,6 @@ if( MSVC )
       $<$<CONFIG:Release>:/MD> #--|
     )
 elseif("${CMAKE_C_COMPILER_ID}" STREQUAL "Clang")
-    message("Using LLVM Clang compiler")
     if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
         set(OPT_LV "O0")
         set(OPT_DBG "-g")
@@ -117,7 +50,6 @@ elseif("${CMAKE_C_COMPILER_ID}" STREQUAL "Clang")
     set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wno-pointer-sign -Wno-unused-function -Wno-unused-variable")
     set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lm")
 elseif( UNIX OR MINGW )
-    message("Using GNU GCC compiler")
     if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
         set(OPT_LV "O0")
         set(OPT_DBG "-g")
@@ -130,10 +62,6 @@ elseif( UNIX OR MINGW )
     set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Werror -Wno-pointer-sign -Wno-pointer-to-int-cast -Wno-maybe-uninitialized -Wno-unused-function -Wno-unused-but-set-variable -Wno-unused-variable -Wno-attributes -Wno-unknown-pragmas -Wno-stringop-overflow")
     set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lm")
 endif()
-
-# Command to output information to the console
-message ("c Flags: " ${CMAKE_C_FLAGS})
-message ("linker Flags: " ${CMAKE_EXE_LINKER_FLAGS})
 
 ########################################
 # Configuration
@@ -148,25 +76,52 @@ if(XEVD_APP_STATIC_BUILD)
     add_definitions(-DXEVD_STATIC_DEFINE)
 endif(XEVD_APP_STATIC_BUILD)
 
-# Sub-directories where more CMakeLists.txt exist
-if(("${SET_PROF}" STREQUAL "BASE"))
-   add_subdirectory(src_base)
+if(XEVD_PROFILE STREQUAL "BASE")
+    add_subdirectory(src_base)
 endif()
-if(("${SET_PROF}" STREQUAL "MAIN"))
-   add_subdirectory(src_main)
+if(XEVD_PROFILE STREQUAL "MAIN")
+    add_subdirectory(src_main)
 endif()
-add_subdirectory(app)
+if (XEVD_BUILD_APP)
+    add_subdirectory(app)
+endif ()
 
-# uninstall target
-if(NOT TARGET uninstall)
-  configure_file(
-    "${CMAKE_CURRENT_SOURCE_DIR}/cmake_uninstall.cmake.in"
-    "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
-    IMMEDIATE @ONLY)
+########################################
+# Installation and Export Configuration
+########################################
 
-  add_custom_target(uninstall
-    COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake)
-endif()
+include(GNUInstallDirs)
+include(CMakePackageConfigHelpers)
+
+# Generate package version file
+write_basic_package_version_file(
+    "${CMAKE_CURRENT_BINARY_DIR}/XEVDConfigVersion.cmake"
+    VERSION ${PROJECT_VERSION}
+    COMPATIBILITY SameMajorVersion
+)
+
+# Generate package config file
+configure_package_config_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/XEVDConfig.cmake.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/XEVDConfig.cmake"
+    INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/XEVD
+)
+
+# Install CMake package configuration files
+install(
+    FILES
+        "${CMAKE_CURRENT_BINARY_DIR}/XEVDConfig.cmake"
+        "${CMAKE_CURRENT_BINARY_DIR}/XEVDConfigVersion.cmake"
+    COMPONENT Development
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/XEVD
+)
+
+# Install main public header
+install(
+    FILES ${CMAKE_CURRENT_SOURCE_DIR}/inc/xevd.h
+    COMPONENT Development
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+)
 
 ########################################
 # CPack project packaging
@@ -179,11 +134,11 @@ elseif( UNIX )
 endif()
 
 # Package name
-if(("${SET_PROF}" STREQUAL "BASE"))
+if(XEVD_PROFILE STREQUAL "BASE")
   set(PACKAGE_PROFILE_NAME "base")
 endif()
 
-if(("${SET_PROF}" STREQUAL "MAIN"))
+if(XEVD_PROFILE STREQUAL "MAIN")
   set(PACKAGE_PROFILE_NAME "main")
 endif()
 
